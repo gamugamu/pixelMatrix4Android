@@ -3,88 +3,94 @@ package com.example.abadie.myapplication;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import android.app.Activity;
+import java.util.Set;
+
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
-import com.example.abadie.myapplication.R;
-
 public class MainActivity extends ActionBarActivity {
-    ListView vue;
+    private ListView mListBt;
+    ArrayAdapter<String> mAdapter;
+    int REQUEST_ENABLE_BT = 1;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        this.setContentView(R.layout.activity_main);
+        this.setupBTList();
+        this.findBTModule();
+    }
 
-        //On récupère une ListView de notre layout en XML, c'est la vue qui représente la liste
-        vue = (ListView) findViewById(R.id.listView);
-    
-    /*
-     * On entrepose nos données dans un tableau qui contient deux colonnes :
-     *  - la première contiendra le nom de l'utilisateur
-     *  - la seconde contiendra le numéro de téléphone de l'utilisateur
-    */
-        String[][] repertoire = new String[][]{
-                {"Bill Gates", "06 06 06 06 06"},
-                {"Niels Bohr", "05 05 05 05 05"},
-                {"Alexandre III de Macédoine", "04 04 04 04 04"}};
-    
-    /*
-     * On doit donner à notre adaptateur une liste du type « List<Map<String, ?> » :
-     *  - la clé doit forcément être une chaîne de caractères
-     *  - en revanche, la valeur peut être n'importe quoi, un objet ou un entier par exemple,
-     *  si c'est un objet, on affichera son contenu avec la méthode « toString() »
-     *
-     * Dans notre cas, la valeur sera une chaîne de caractères, puisque le nom et le numéro de téléphone
-     * sont entreposés dans des chaînes de caractères
-    */
-        List<HashMap<String, String>> liste = new ArrayList<HashMap<String, String>>();
+    private void setupBTList(){
+        mListBt  = (ListView) findViewById(R.id.listView);
+        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
 
-        HashMap<String, String> element;
-        //Pour chaque personne dans notre répertoire…
-        for(int i = 0 ; i < repertoire.length ; i++) {
-            //… on crée un élément pour la liste…
-            element = new HashMap<String, String>();
-      /*
-       * … on déclare que la clé est « text1 » (j'ai choisi ce mot au hasard, sans sens technique particulier)  
-       * pour le nom de la personne (première dimension du tableau de valeurs)…
-      */
-            element.put("text1", repertoire[i][0]);
-      /*
-       * … on déclare que la clé est « text2 »
-       * pour le numéro de cette personne (seconde dimension du tableau de valeurs)
-      */
-            element.put("text2", repertoire[i][1]);
-            liste.add(element);
+        mListBt.setAdapter(mAdapter);
+    }
+
+    //region LOGIC
+    private void findBTModule(){
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if (!mBluetoothAdapter.isEnabled()){
+            Intent intentBtEnabled = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(intentBtEnabled, REQUEST_ENABLE_BT);
+        }else
+            this.startBTDiscovery();
+    }
+
+    @Override
+    protected void onActivityResult (int requestCode, int resultCode, Intent data){
+        if(resultCode == REQUEST_ENABLE_BT){
+
+        }
+        /*
+                Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+
+// If there are paired devices
+        if (pairedDevices.size() > 0) {
+            // Loop through paired devices
+            for (BluetoothDevice device : pairedDevices) {
+                // Add the name and address to an array adapter to show in a ListView
+                //mArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+            }
         }
 
-        ListAdapter adapter = new SimpleAdapter(this,
-                //Valeurs à insérer
-                liste,
-      /*
-       * Layout de chaque élément (là, il s'agit d'un layout par défaut
-       * pour avoir deux textes l'un au-dessus de l'autre, c'est pourquoi on 
-       * n'affiche que le nom et le numéro d'une personne)
-      */
-                android.R.layout.simple_list_item_2,
-      /*
-       * Les clés des informations à afficher pour chaque élément :
-       *  - la valeur associée à la clé « text1 » sera la première information
-       *  - la valeur associée à la clé « text2 » sera la seconde information
-      */
-                new String[] {"text1", "text2"},
-      /*
-       * Enfin, les layouts à appliquer à chaque widget de notre élément
-       * (ce sont des layouts fournis par défaut) :
-       *  - la première information appliquera le layout « android.R.id.text1 »
-       *  - la seconde information appliquera le layout « android.R.id.text2 »
-      */
-                new int[] {android.R.id.text1, android.R.id.text2 });
-        //Pour finir, on donne à la ListView le SimpleAdapter
-        vue.setAdapter(adapter);
+         */
+    }
+
+    private void startBTDiscovery(){
+        final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        BroadcastReceiver mReceiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+                    mAdapter.add(device.getAddress() + " - " + device.getName() + "\n");
+                    mAdapter.notifyDataSetChanged();
+                    mBluetoothAdapter.cancelDiscovery();
+                }
+            }
+        };
+
+        registerReceiver(mReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+        registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
+        registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
+
+        mBluetoothAdapter.startDiscovery();
     }
 }
