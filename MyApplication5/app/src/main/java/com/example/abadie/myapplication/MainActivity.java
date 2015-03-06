@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -22,6 +23,7 @@ import android.widget.SimpleAdapter;
 public class MainActivity extends ActionBarActivity {
     private ListView mListBt;
     ArrayAdapter<String> mAdapter;
+    ProgressDialog mProgessDialog;
     int REQUEST_ENABLE_BT = 1;
 
     @Override
@@ -46,8 +48,10 @@ public class MainActivity extends ActionBarActivity {
         if (!mBluetoothAdapter.isEnabled()){
             Intent intentBtEnabled = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(intentBtEnabled, REQUEST_ENABLE_BT);
-        }else
+        }else{
+            this.displayWait();
             this.startBTDiscovery();
+        }
     }
 
     @Override
@@ -82,7 +86,11 @@ public class MainActivity extends ActionBarActivity {
 
                     mAdapter.add(device.getAddress() + " - " + device.getName() + "\n");
                     mAdapter.notifyDataSetChanged();
+                }
+
+                if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
                     mBluetoothAdapter.cancelDiscovery();
+                    MainActivity.this.undisplayWait();
                 }
             }
         };
@@ -92,5 +100,13 @@ public class MainActivity extends ActionBarActivity {
         registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 
         mBluetoothAdapter.startDiscovery();
+    }
+
+    private void displayWait(){
+        mProgessDialog = ProgressDialog.show(this, "", "Please Wait", false);
+    }
+
+    private void undisplayWait(){
+        mProgessDialog.dismiss();
     }
 }
