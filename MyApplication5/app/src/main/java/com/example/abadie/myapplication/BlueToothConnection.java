@@ -41,10 +41,10 @@ class BluetoothConnection extends Thread {
         try {
             boolean temp = device.fetchUuidsWithSdp();
             UUID uuid = null;
-            if( temp && device != null){
+            if( temp && device != null && device.getUuids().length > 0){
                 uuid = device.getUuids()[0].getUuid();
                 Log.d("############ UID", "UID" + uuid);
-                tmp         = device.createInsecureRfcommSocketToServiceRecord(uuid);
+                tmp         = device.createRfcommSocketToServiceRecord(uuid);
                 Method m    = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] {int.class});
                 tmp         = (BluetoothSocket) m.invoke(device, 1);
                 // Always cancel discovery because it will slow down a connection
@@ -110,24 +110,22 @@ class BluetoothConnection extends Thread {
 
     public void run() {
         Log.d("############", "running ");
+        byte[] buffer = new byte[512];
+        int bytes;
+        StringBuilder readMessage = new StringBuilder();
 
         // Keep listening to the InputStream while connected
         while (true) {
-            Log.d("############", "++++++++ ");
-            int available = 0;
-
-            try {
-                available = mmInStream.available();
-            } catch (IOException e) {}
-            Log.d("############", "AVAILABLE ?" + available);
-
-           // if (available > 0) {
                 try {
-                if(mmInStream != null){
                     Log.d("############", "WILL INITIATE READ");
-                    mmInStream.read(buffer);
-                    Log.d("############", "Received : " + (new String(buffer)));
-                }
+                    bytes = mmInStream.read(buffer);
+                    String readed = new String(buffer, 0, bytes);
+                    readMessage.append(readed);
+
+                    Log.d("############", "Received : " +readMessage.toString());
+                    if (readed.contains("\n")) {
+                        readMessage.setLength(0);
+                    }
 
                 // Send the obtained bytes to the UI Activity
             } catch (IOException e) {
