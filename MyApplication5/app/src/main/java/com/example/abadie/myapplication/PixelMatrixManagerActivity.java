@@ -1,6 +1,8 @@
 package com.example.abadie.myapplication;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -10,41 +12,39 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
-import android.view.Window;
-import android.widget.ImageView;
 
-import com.felipecsl.gifimageview.library.GifImageView;
+import java.io.IOException;
 
+import pl.droidsonroids.gif.GifDrawable;
+import pl.droidsonroids.gif.GifImageView;
 
 public class PixelMatrixManagerActivity extends ActionBarActivity {
-
-    private GifImageView mGifView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pixel_matrix_manager);
+        /*
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
-        }
+        }*/
         this.setUpGif();
     }
 
     public void setUpGif(){
-        mGifView = new GifImageView(this);
-        // test
-        ImageView view = (ImageView)findViewById(R.drawable.dancingbanana);
 
-        view.setDrawingCacheEnabled(true);
-        view.buildDrawingCache();
 
-        Bitmap bm = view.getDrawingCache();
-       // mGifView.setBytes(bitmapData);
-
-        this.setContentView(mGifView);
+        try {
+            GifImageView gifImageView = new GifImageView(this);
+            GifDrawable gifFromResource = null;
+            gifFromResource = new GifDrawable( getResources(), R.drawable.dancingbanana);
+            gifImageView.setImageDrawable(gifFromResource);
+            this.setContentView(gifImageView);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
