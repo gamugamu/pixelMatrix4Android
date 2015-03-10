@@ -24,6 +24,7 @@ public class MainActivity extends ActionBarActivity {
     // Helper
     private BluetoothConnection btSocketManager;
     private ArrayList<BluetoothDevice> listDevice = new ArrayList<BluetoothDevice>();
+    private BroadcastReceiver mReceiver;
 
     // GUI
     private ListView mListBt;
@@ -85,7 +86,12 @@ public class MainActivity extends ActionBarActivity {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // LOGIC
     private void findBTModule(){
+        if(mReceiver != null)
+            this.unregisterReceiver(mReceiver);
+
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapter.clear();
+        listDevice.clear();
 
         if (!mBluetoothAdapter.isEnabled()){
             Intent intentBtEnabled = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -100,7 +106,7 @@ public class MainActivity extends ActionBarActivity {
     private void startBTDiscovery(){
         final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        mReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
 
