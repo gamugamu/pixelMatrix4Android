@@ -16,13 +16,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-// taken from http://androidcookbook.com/Recipe.seam;jsessionid=9B476BA317AA36E2CB0D6517ABE60A5E?recipeId=1665
-
 class BluetoothConnection extends Thread {
     private final BluetoothSocket mmSocket;
     private InputStream mmInStream;
     private OutputStream mmOutStream;
-    private BluetoothSocket btSocket;
     private BluetoothAdapter madapter;
     private Thread mConnectionThread;
 
@@ -51,13 +48,8 @@ class BluetoothConnection extends Thread {
                 madapter.cancelDiscovery();
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
+        } catch (IOException | InvocationTargetException |
+                NoSuchMethodException | IllegalAccessException e){
             e.printStackTrace();
         }
         mmSocket = tmp;
@@ -88,23 +80,6 @@ class BluetoothConnection extends Thread {
                 }
             }
         });
-/*
-        InputStream tmpIn = null;
-        OutputStream tmpOut = null;
-
-        // Get the BluetoothSocket input and output streams
-        try {
-            btSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
-            tmpIn    = btSocket.getInputStream();
-            tmpOut   = btSocket.getOutputStream();
-            buffer   = new byte[1024];
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        mmInStream = tmpIn;
-        mmOutStream = tmpOut;
-*/
         mConnectionThread.start();
     }
 
@@ -133,12 +108,6 @@ class BluetoothConnection extends Thread {
                 //send message to UI Activity
                 break;
             }
-/*
-            try {
-                Thread.sleep(10);
-                this.write("hello".getBytes());
-            } catch (InterruptedException e) {}
-            */
         }
     }
 
