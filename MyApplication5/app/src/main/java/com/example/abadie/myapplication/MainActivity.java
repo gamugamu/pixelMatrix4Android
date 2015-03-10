@@ -15,7 +15,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -32,12 +31,13 @@ public class MainActivity extends ActionBarActivity {
     private ProgressDialog mProgessDialog;
     int REQUEST_ENABLE_BT = 1;
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // LifeCycle
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_main);
         this.setupBTList();
-        this.findBTModule();
     }
 
     @Override
@@ -67,6 +67,7 @@ public class MainActivity extends ActionBarActivity {
          */
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // GUI
     private void displayWait(){
         mProgessDialog = ProgressDialog.show(this, "", "Please Wait", false);
@@ -76,6 +77,12 @@ public class MainActivity extends ActionBarActivity {
         mProgessDialog.dismiss();
     }
 
+    // GUI Action button
+    public void onButtonBluetoothScanTapped(View v){
+        this.findBTModule();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // LOGIC
     private void findBTModule(){
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -165,6 +172,7 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // SETUP
     private void setupBTList(){
         mListBt  = (ListView) findViewById(R.id.listView);
@@ -199,10 +207,6 @@ public class MainActivity extends ActionBarActivity {
 
     private final BroadcastReceiver mPairReceiver = new BroadcastReceiver() {
 
-        public void BroadcastReceiver(){
-            Log.d("############", "CONS ");
-        }
-
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
@@ -224,9 +228,7 @@ public class MainActivity extends ActionBarActivity {
                 } else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED){
                     // showToast("Unpaired");
                     Log.d("############", "UNPAIRED ");
-
                 }
-
             }
         }
     };
