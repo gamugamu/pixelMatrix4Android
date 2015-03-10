@@ -43,7 +43,14 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public void onDestroy() {
-        unregisterReceiver(mPairReceiver);
+        try{
+             if(mReceiver != null)
+                 this.unregisterReceiver(mReceiver);
+
+             if(mPairReceiver != null)
+                 this.unregisterReceiver(mPairReceiver);
+        }
+        catch (IllegalArgumentException e) { }
 
         super.onDestroy();
     }
@@ -83,8 +90,18 @@ public class MainActivity extends ActionBarActivity {
         this.findBTModule();
     }
 
+    public void onTestTapped(View v){
+        this.navigateToPixelMatrixManagerActivity();
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // LOGIC
+    private void navigateToPixelMatrixManagerActivity(){
+        Intent myIntent = new Intent(MainActivity.this, PixelMatrixManagerActivity.class);
+        //myIntent.putExtra("key", value); //Optional parameters
+        MainActivity.this.startActivity(myIntent);
+    }
+
     private void findBTModule(){
         if(mReceiver != null)
             this.unregisterReceiver(mReceiver);
@@ -204,8 +221,6 @@ public class MainActivity extends ActionBarActivity {
             }
         });
     }
-
-
 
     private void setUpBtManagerAndlistenSPPBluetooth(BluetoothDevice device, BluetoothAdapter adapter){
         btSocketManager = new BluetoothConnection(device, adapter);
