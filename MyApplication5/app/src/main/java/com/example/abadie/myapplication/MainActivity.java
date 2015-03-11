@@ -10,9 +10,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MainActivity extends ActionBarActivity implements IBluetoothManagerable{
     // Helper
     BluetoothManager mBtManager;
@@ -33,7 +30,7 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
         mAdapter.notifyDataSetChanged();
     }
 
-    public void didFindingFoundBluetoothObject(){
+    public void didEndFindingBluetoothObject(){
         this.undisplayWait();
     }
 
@@ -44,13 +41,14 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_main);
         mBtManager = BluetoothManager.getInstance();
-        mBtManager.setManagearable(this);
+        mBtManager.registerToBluetoothEvent(this);
         this.setupBTList();
     }
 
     @Override
     public void onDestroy(){
-        mBtManager.onDestroy();
+        mBtManager.setmBtSteamReader(null);
+        mBtManager.unregisterToBluetoothEvent(this);
         super.onDestroy();
     }
 

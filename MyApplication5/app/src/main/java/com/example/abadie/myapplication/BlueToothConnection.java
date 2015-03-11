@@ -16,12 +16,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-class BluetoothConnection extends Thread {
+interface IBluetoothStreamReader{
+    public void bluetoothDidReadStream(String output);
+}
+
+class BluetoothConnection extends Thread{
     private final BluetoothSocket mmSocket;
     private InputStream mmInStream;
     private OutputStream mmOutStream;
     private BluetoothAdapter madapter;
     private Thread mConnectionThread;
+    private IBluetoothStreamReader mBtSteamReader;
 
     byte[] buffer;
 
@@ -97,10 +102,14 @@ class BluetoothConnection extends Thread {
                     String readed = new String(buffer, 0, bytes);
                     readMessage.append(readed);
 
-                    Log.d("############", "Received : " +readMessage.toString());
-                    if (readed.contains("\n")) {
-                        readMessage.setLength(0);
-                    }
+
+                     if(mBtSteamReader != null) {
+                         mBtSteamReader.bluetoothDidReadStream(readMessage.toString());
+
+                     }
+                     if (readed.contains("\n")) {
+                         readMessage.setLength(0);
+                  }
 
                 // Send the obtained bytes to the UI Activity
             } catch (IOException e) {
@@ -132,5 +141,13 @@ class BluetoothConnection extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public IBluetoothStreamReader getmBtSteamReader() {
+        return mBtSteamReader;
+    }
+
+    public void setmBtSteamReader(IBluetoothStreamReader mBtSteamListener) {
+        this.mBtSteamReader = mBtSteamListener;
     }
 }

@@ -20,7 +20,7 @@ import java.util.List;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
-public class PixelMatrixManagerActivity extends ActionBarActivity {
+public class PixelMatrixManagerActivity extends ActionBarActivity implements IBluetoothStreamReader, IBluetoothManagerable{
 
     BluetoothManager mBtManager;
 
@@ -28,12 +28,55 @@ public class PixelMatrixManagerActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pixel_matrix_manager);
-        BluetoothDevice device = BluetoothManager.getInstance().getCurrentPairedDevice();
 
+        this.setUpBtDevice();
         this.setUpInputText();
     }
 
-    private void setUpInputText(){
+    @Override
+    public void onDestroy() {
+        mBtManager.setmBtSteamReader(null);
+        mBtManager.unregisterToBluetoothEvent(this);
+        super.onDestroy();
+    }
+
+    private void setUpBtDevice(){
+        mBtManager = BluetoothManager.getInstance();
+        mBtManager.setmBtSteamReader(this);
+        mBtManager.registerToBluetoothEvent(this);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Interface IBluetoothManagerable
+    public void willStartFindingModule(){
+
+    }
+
+    public void didFoundBluetoothObject(BluetoothDevice device){
+
+    }
+
+    public void didEndFindingBluetoothObject(){
+    }
+
+
+    public void bluetoothDidReadStream(final String output){
+        Log.d("############", "XReceived : " + output);
+
+        new Thread(){
+            public void run(){
+                runOnUiThread(new Runnable(){
+                    public void run(){
+                        //Do your UI operations like dialog opening or Toast here
+                        TextView textView = (TextView) findViewById(R.id.textView1);
+                        textView.setText(output);
+                    }
+                });
+            }
+        }.start();
+    }
+
+        private void setUpInputText(){
         EditText editText = (EditText) findViewById(R.id.bt_input);
         editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override

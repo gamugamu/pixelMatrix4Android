@@ -14,22 +14,25 @@ import java.util.ArrayList;
 import java.util.Set;
 
 interface IBluetoothManagerable{
-
     public void willStartFindingModule();
     public void didFoundBluetoothObject(BluetoothDevice device);
-    public void didFindingFoundBluetoothObject();
+    public void didEndFindingBluetoothObject();
 }
+
 /**
  * Created by abadie on 10/03/2015.
  */
-public class BluetoothManager{
+public class BluetoothManager implements IBluetoothStreamReader{
     int REQUEST_ENABLE_BT = 1;
 
     private BluetoothConnection btSocketManager;
+
     private ArrayList<BluetoothDevice> listDevice = new ArrayList<BluetoothDevice>();
     private BroadcastReceiver mReceiver;
     private Activity mBbtClient;
     private IBluetoothManagerable mBtManagerable;
+    private IBluetoothStreamReader mBtSteamReader;
+
     private BluetoothDevice mCurrentPairedDevice;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,15 +48,11 @@ public class BluetoothManager{
         return sInstance;
     }
 
-    public void setManagearable(Activity managerable){
-        //TODO cancel last managerable
-        mBbtClient      = managerable;
-        mBtManagerable  = (IBluetoothManagerable)managerable;
-    }
-
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // PUBLIC
     public void findBTModule(){
         if(mReceiver != null)
+            //TODO exception
             mBbtClient.unregisterReceiver(mReceiver);
 
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -102,23 +101,40 @@ public class BluetoothManager{
         return mCurrentPairedDevice;
     }
 
+    public IBluetoothStreamReader getmBtSteamReader() {
+        return mBtSteamReader;
+    }
+
+    public void setmBtSteamReader(IBluetoothStreamReader mBtSteamListener) {
+        this.mBtSteamReader = mBtSteamListener;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // LIFECYCLE
-    public void onDestroy(){
-        try{
-            if(mReceiver != null)
-                mBbtClient.unregisterReceiver(mReceiver);
 
-            if(mPairReceiver != null)
-                mBbtClient.unregisterReceiver(mPairReceiver);
-        }
-        catch (IllegalArgumentException e) { }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // IBLUETOOTHSTREAMREADER
+    public void bluetoothDidReadStream(String output){
+        Log.d("############", "Received : " + output);
+
+        if(mBtSteamReader != null)
+            mBtSteamReader.bluetoothDidReadStream(output);
+    }
+
+    public void registerToBluetoothEvent(Activity managerable){
+        this.setManagearable(managerable);
+    }
+
+    public void unregisterToBluetoothEvent(Activity managerable){
+      //  if(managerable == mBtManagerable)
+        this.unregisterClient();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // SETUP
     private void setUpBtManagerAndlistenSPPBluetooth(BluetoothDevice device, BluetoothAdapter adapter){
         btSocketManager = new BluetoothConnection(device, adapter);
+        btSocketManager.setmBtSteamReader(this);
     }
 
     private void startBTDiscovery(){
@@ -138,7 +154,7 @@ public class BluetoothManager{
 
                 if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
                     mBluetoothAdapter.cancelDiscovery();
-                    mBtManagerable.didFindingFoundBluetoothObject();
+                    mBtManagerable.didEndFindingBluetoothObject();
                 }
             }
         };
@@ -149,7 +165,6 @@ public class BluetoothManager{
 
         mBluetoothAdapter.startDiscovery();
     }
-
 
     private void scanBt(BluetoothAdapter mBluetoothAdapter){
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
@@ -201,4 +216,21 @@ public class BluetoothManager{
             }
         }
     };
+
+    private void unregisterClient(){
+        try{
+            if(mReceiver != null)
+                mBbtClient.unregisterReceiver(mReceiver);
+
+            if(mPairReceiver != null)
+                mBbtClient.unregisterReceiver(mPairReceiver);
+        }
+        catch (IllegalArgumentException e) { }
+    }
+
+    private void setManagearable(Activity managerable){
+        //TODO cancel last managerable
+        mBbtClient      = managerable;
+        mBtManagerable  = (IBluetoothManagerable)managerable;
+    }
 }
