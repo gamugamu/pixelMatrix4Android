@@ -1,41 +1,55 @@
 package com.example.abadie.myapplication;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
+import android.bluetooth.BluetoothDevice;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.TextView;
 import java.io.IOException;
+import java.util.List;
 
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
 public class PixelMatrixManagerActivity extends ActionBarActivity {
 
+    BluetoothManager mBtManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pixel_matrix_manager);
-        /*
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
-                    .commit();
-        }*/
-        this.setUpGif();
+        BluetoothDevice device = BluetoothManager.getInstance().getCurrentPairedDevice();
+
+        this.setUpInputText();
     }
 
-    public void setUpGif(){
+    private void setUpInputText(){
+        EditText editText = (EditText) findViewById(R.id.bt_input);
+        editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                boolean handled = true;
 
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    Log.d("############", "SCAN " + v.getText());
+                    handled = false;
+                }
+                return handled;
+            }
+        });
+    }
 
+    private void setUpGif(){
         try {
             GifImageView gifImageView = new GifImageView(this);
             GifDrawable gifFromResource = null;

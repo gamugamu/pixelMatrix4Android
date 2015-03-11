@@ -25,17 +25,28 @@ interface IBluetoothManagerable{
 public class BluetoothManager{
     int REQUEST_ENABLE_BT = 1;
 
-    // Helper
     private BluetoothConnection btSocketManager;
     private ArrayList<BluetoothDevice> listDevice = new ArrayList<BluetoothDevice>();
     private BroadcastReceiver mReceiver;
     private Activity mBbtClient;
     private IBluetoothManagerable mBtManagerable;
+    private BluetoothDevice mCurrentPairedDevice;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // TODO exception BluetoothManager()
+    // SINGLETON
 
-    public BluetoothManager(Activity managerable){
+    private static BluetoothManager sInstance;
+    private BluetoothManager(){}
+
+    public static synchronized BluetoothManager getInstance(){
+        if(sInstance == null){
+            sInstance = new BluetoothManager();
+        }
+        return sInstance;
+    }
+
+    public void setManagearable(Activity managerable){
+        //TODO cancel last managerable
         mBbtClient      = managerable;
         mBtManagerable  = (IBluetoothManagerable)managerable;
     }
@@ -68,6 +79,7 @@ public class BluetoothManager{
         try {
             Method method = device.getClass().getMethod("createBond", (Class[]) null);
             method.invoke(device, (Object[]) null);
+            mCurrentPairedDevice = device;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -78,11 +90,20 @@ public class BluetoothManager{
             Method method = device.getClass().getMethod("removeBond", (Class[]) null);
             method.invoke(device, (Object[]) null);
             btSocketManager.cancel();
+            mCurrentPairedDevice = null;
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // GETTER / SETTER
+    public BluetoothDevice getCurrentPairedDevice() {
+        return mCurrentPairedDevice;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // LIFECYCLE
     public void onDestroy(){
         try{
             if(mReceiver != null)
@@ -139,7 +160,6 @@ public class BluetoothManager{
                 Log.d("############", "Items " + pairedDevices);
             }
         }
-
     }
 
     private void makePairingDevice(BluetoothDevice device){

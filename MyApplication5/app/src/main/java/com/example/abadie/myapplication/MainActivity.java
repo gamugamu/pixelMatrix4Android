@@ -10,6 +10,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends ActionBarActivity implements IBluetoothManagerable{
     // Helper
     BluetoothManager mBtManager;
@@ -18,6 +21,9 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
     private ArrayAdapter<String> mAdapter;
     private ProgressDialog mProgessDialog;
 
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Interface IBluetoothManagerable
     public void willStartFindingModule(){
         mAdapter.clear();
     }
@@ -30,13 +36,15 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
     public void didFindingFoundBluetoothObject(){
         this.undisplayWait();
     }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // LifeCycle
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_main);
-        mBtManager = new BluetoothManager(this);
+        mBtManager = BluetoothManager.getInstance();
+        mBtManager.setManagearable(this);
         this.setupBTList();
     }
 
@@ -70,7 +78,6 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
     // LOGIC
     private void navigateToPixelMatrixManagerActivity(){
         Intent myIntent = new Intent(MainActivity.this, PixelMatrixManagerActivity.class);
-        //myIntent.putExtra("key", value); //Optional parameters
         MainActivity.this.startActivity(myIntent);
     }
 
