@@ -29,21 +29,23 @@ public class BluetoothManager implements IBluetoothStreamReader{
 
     private ArrayList<BluetoothDevice> listDevice = new ArrayList<BluetoothDevice>();
     private BroadcastReceiver mReceiver;
-    private Activity mBbtClient;
     private IBluetoothManagerable mBtManagerable;
     private IBluetoothStreamReader mBtSteamReader;
 
     private BluetoothDevice mCurrentPairedDevice;
+    private Context mApplicationContext;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // SINGLETON
 
     private static BluetoothManager sInstance;
-    private BluetoothManager(){}
+    private BluetoothManager(Context context){
+        mApplicationContext = context.getApplicationContext();
+    }
 
-    public static synchronized BluetoothManager getInstance(){
+    public static synchronized BluetoothManager getInstance(Context context){
         if(sInstance == null){
-            sInstance = new BluetoothManager();
+            sInstance = new BluetoothManager(context);
         }
         return sInstance;
     }
@@ -51,19 +53,14 @@ public class BluetoothManager implements IBluetoothStreamReader{
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // PUBLIC
     public void findBTModule(){
-        if(mReceiver != null)
-            //TODO exception
-            mBbtClient.unregisterReceiver(mReceiver);
-
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         listDevice.clear();
 
         if (!mBluetoothAdapter.isEnabled()){
             Intent intentBtEnabled = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            mBbtClient.startActivityForResult(intentBtEnabled, REQUEST_ENABLE_BT);
+            ((Activity)mApplicationContext).startActivityForResult(intentBtEnabled, REQUEST_ENABLE_BT);
         }else{
             this.startBTDiscovery();
-            mBbtClient.registerReceiver(mPairReceiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
         }
     }
 
@@ -126,7 +123,6 @@ public class BluetoothManager implements IBluetoothStreamReader{
     }
 
     public void unregisterToBluetoothEvent(Activity managerable){
-      //  if(managerable == mBtManagerable)
         this.unregisterClient();
     }
 
@@ -138,6 +134,10 @@ public class BluetoothManager implements IBluetoothStreamReader{
     }
 
     private void startBTDiscovery(){
+        try {
+            mApplicationContext.unregisterReceiver(mReceiver);
+        }catch (IllegalArgumentException e){}
+
         final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mBtManagerable.willStartFindingModule();
 
@@ -156,12 +156,33 @@ public class BluetoothManager implements IBluetoothStreamReader{
                     mBluetoothAdapter.cancelDiscovery();
                     mBtManagerable.didEndFindingBluetoothObject();
                 }
+
+
+                if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                    final int state        = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
+                    final int prevState    = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR);
+
+                    Log.d("############", "STATE " + state + " " + prevState);
+
+                    if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
+                        Log.d("############", "PAIRED ");
+                        BluetoothDevice btDevice        = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        BluetoothAdapter btAdaptater     = BluetoothAdapter.getDefaultAdapter();
+
+                        BluetoothManager.this.scanBt(btAdaptater);
+                        BluetoothManager.this.setUpBtManagerAndlistenSPPBluetooth(btDevice, btAdaptater);
+
+                    } else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED){
+                        Log.d("############", "UNPAIRED ");
+                    }
+                }
             }
         };
 
-        mBbtClient.registerReceiver(mReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-        mBbtClient.registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
-        mBbtClient.registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
+        mApplicationContext.registerReceiver(mReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+        mApplicationContext.registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
+        mApplicationContext.registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
+        mApplicationContext.registerReceiver(mReceiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
 
         mBluetoothAdapter.startDiscovery();
     }
@@ -191,46 +212,15 @@ public class BluetoothManager implements IBluetoothStreamReader{
         this.scanBt(BluetoothAdapter.getDefaultAdapter());
     }
 
-    private final BroadcastReceiver mPairReceiver = new BroadcastReceiver() {
-
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-
-            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-                final int state        = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
-                final int prevState    = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR);
-
-                Log.d("############", "STATE " + state + " " + prevState);
-
-                if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
-                    Log.d("############", "PAIRED ");
-                    BluetoothDevice btDevice        = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    BluetoothAdapter btAdaptater     = BluetoothAdapter.getDefaultAdapter();
-
-                    BluetoothManager.this.scanBt(btAdaptater);
-                    BluetoothManager.this.setUpBtManagerAndlistenSPPBluetooth(btDevice, btAdaptater);
-
-                } else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED){
-                    Log.d("############", "UNPAIRED ");
-                }
-            }
-        }
-    };
-
     private void unregisterClient(){
         try{
-            if(mReceiver != null)
-                mBbtClient.unregisterReceiver(mReceiver);
-
-            if(mPairReceiver != null)
-                mBbtClient.unregisterReceiver(mPairReceiver);
+            mApplicationContext.unregisterReceiver(mReceiver);
         }
         catch (IllegalArgumentException e) { }
     }
 
     private void setManagearable(Activity managerable){
         //TODO cancel last managerable
-        mBbtClient      = managerable;
         mBtManagerable  = (IBluetoothManagerable)managerable;
     }
 }

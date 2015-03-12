@@ -31,5 +31,9 @@
                 android:value="MainActivity" />
         </activity>
     </application>
-
+    <receiver android:name="BluetoothManager">
+        <intent-filter>
+            <action android:name="android.bluetooth.BluetoothDevice.ACTION_ACL_CONNECTED" />
+        </intent-filter>
+    </receiver>
 </manifest>

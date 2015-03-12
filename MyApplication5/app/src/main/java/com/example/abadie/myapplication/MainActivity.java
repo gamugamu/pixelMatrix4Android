@@ -40,7 +40,7 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_main);
-        mBtManager = BluetoothManager.getInstance();
+        mBtManager = BluetoothManager.getInstance(this.getApplicationContext());
         mBtManager.registerToBluetoothEvent(this);
         this.setupBTList();
     }

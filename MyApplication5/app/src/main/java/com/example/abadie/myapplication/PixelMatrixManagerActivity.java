@@ -41,7 +41,7 @@ public class PixelMatrixManagerActivity extends ActionBarActivity implements IBl
     }
 
     private void setUpBtDevice(){
-        mBtManager = BluetoothManager.getInstance();
+        mBtManager = BluetoothManager.getInstance(this.getApplicationContext());
         mBtManager.setmBtSteamReader(this);
         mBtManager.registerToBluetoothEvent(this);
     }
