@@ -1,6 +1,5 @@
 package com.example.abadie.myapplication;
 
-import android.bluetooth.BluetoothDevice;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -15,12 +14,10 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import java.io.IOException;
-import java.util.List;
-
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
-public class PixelMatrixManagerActivity extends ActionBarActivity implements IBluetoothStreamReader, IBluetoothManagerable{
+public class PixelMatrixManagerActivity extends ActionBarActivity{
 
     BluetoothManager mBtManager;
 
@@ -35,32 +32,23 @@ public class PixelMatrixManagerActivity extends ActionBarActivity implements IBl
 
     @Override
     public void onDestroy() {
-        mBtManager.setmBtSteamReader(null);
-        mBtManager.unregisterToBluetoothEvent(this);
+        mBtManager.unregisterToStreamBtEvent();
         super.onDestroy();
     }
 
     private void setUpBtDevice(){
         mBtManager = BluetoothManager.getInstance(this.getApplicationContext());
-        mBtManager.setmBtSteamReader(this);
-        mBtManager.registerToBluetoothEvent(this);
+        mBtManager.registerToStreamBtEvent(new BluetoothStreamReceiver() {
+            @Override
+            public void onStreamReceive(String outputStream) {
+                PixelMatrixManagerActivity.this.didReadStream(outputStream);
+            }
+        });
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Interface IBluetoothManagerable
-    public void willStartFindingModule(){
 
-    }
-
-    public void didFoundBluetoothObject(BluetoothDevice device){
-
-    }
-
-    public void didEndFindingBluetoothObject(){
-    }
-
-
-    public void bluetoothDidReadStream(final String output){
+    private void didReadStream(final String output){
         Log.d("############", "XReceived : " + output);
 
         new Thread(){

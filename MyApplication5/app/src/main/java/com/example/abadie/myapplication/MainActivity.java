@@ -2,6 +2,8 @@ package com.example.abadie.myapplication;
 
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -10,7 +12,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-public class MainActivity extends ActionBarActivity implements IBluetoothManagerable{
+public class MainActivity extends ActionBarActivity{
     // Helper
     BluetoothManager mBtManager;
     // GUI
@@ -18,37 +20,19 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
     private ArrayAdapter<String> mAdapter;
     private ProgressDialog mProgessDialog;
 
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Interface IBluetoothManagerable
-    public void willStartFindingModule(){
-        mAdapter.clear();
-    }
-
-    public void didFoundBluetoothObject(BluetoothDevice device){
-        mAdapter.add(device.getAddress() + " - " + device.getName() + "\n");
-        mAdapter.notifyDataSetChanged();
-    }
-
-    public void didEndFindingBluetoothObject(){
-        this.undisplayWait();
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // LifeCycle
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_main);
-        mBtManager = BluetoothManager.getInstance(this.getApplicationContext());
-        mBtManager.registerToBluetoothEvent(this);
         this.setupBTList();
+        this.setupBTManager();
     }
 
     @Override
     public void onDestroy(){
-        mBtManager.setmBtSteamReader(null);
-        mBtManager.unregisterToBluetoothEvent(this);
+        this.unsetBTManager();
         super.onDestroy();
     }
 
@@ -64,7 +48,6 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
 
     // GUI Action button
     public void onButtonBluetoothScanTapped(View v){
-        this.displayWait();
         mBtManager.findBTModule();
     }
 
@@ -77,6 +60,15 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
     private void navigateToPixelMatrixManagerActivity(){
         Intent myIntent = new Intent(MainActivity.this, PixelMatrixManagerActivity.class);
         MainActivity.this.startActivity(myIntent);
+    }
+
+    private void didFoundBluetoothObject(BluetoothDevice device){
+        mAdapter.add(device.getAddress() + " - " + device.getName() + "\n");
+        mAdapter.notifyDataSetChanged();
+    }
+
+    private void clearList(){
+        mAdapter.clear();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,5 +97,32 @@ public class MainActivity extends ActionBarActivity implements IBluetoothManager
                 }
             }
         });
+    }
+
+    private void setupBTManager(){
+        mBtManager = BluetoothManager.getInstance(this.getApplicationContext());
+        mBtManager.registerToBluetoothEvent(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent){
+                String action = intent.getAction();
+
+                if (action.equals(BTACTION.ACTION_DISCOVERY_STARTED.toString())){
+                    MainActivity.this.clearList();
+                    MainActivity.this.displayWait();
+                }
+
+                if (action.equals(BTACTION.ACTION_FOUND.toString())){
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    MainActivity.this.didFoundBluetoothObject(device);
+                }
+
+                if(action.equals(BTACTION.ACTION_DISCOVERY_FINISHED.toString()))
+                    MainActivity.this.undisplayWait();
+            }
+        });
+    }
+
+    private void unsetBTManager(){
+        mBtManager.unregisterToBluetoothEvent();
     }
 }

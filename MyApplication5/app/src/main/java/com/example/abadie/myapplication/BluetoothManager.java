@@ -13,31 +13,25 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 
-interface IBluetoothManagerable{
-    public void willStartFindingModule();
-    public void didFoundBluetoothObject(BluetoothDevice device);
-    public void didEndFindingBluetoothObject();
-}
-
 /**
  * Created by abadie on 10/03/2015.
  */
 public class BluetoothManager implements IBluetoothStreamReader{
+
     int REQUEST_ENABLE_BT = 1;
 
-    private BluetoothConnection btSocketManager;
+    private ArrayList<BluetoothDevice> listDevice = new ArrayList<BluetoothDevice>(); // list all detected device
 
-    private ArrayList<BluetoothDevice> listDevice = new ArrayList<BluetoothDevice>();
-    private BroadcastReceiver mReceiver;
-    private IBluetoothManagerable mBtManagerable;
-    private IBluetoothStreamReader mBtSteamReader;
+    private BluetoothDevice mCurrentPairedDevice;                    // current device checked, or null if not exist
+    private Context mApplicationContext;                             // let the btManager listen the bt event
+    private BroadcastReceiver btBroadCastClient;                     // listen to BT Pairing device
+    private BluetoothStreamReceiver btBroadCastStreamReceiver;       // listen to stream BT device
 
-    private BluetoothDevice mCurrentPairedDevice;
-    private Context mApplicationContext;
+    private BluetoothConnection btSocketManager;    // helper to make bt pairing device.
+    private BroadcastReceiver mReceiver;            // internal listening to BT Pairing device. Bond to btBroadCastClient
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // SINGLETON
-
     private static BluetoothManager sInstance;
     private BluetoothManager(Context context){
         mApplicationContext = context.getApplicationContext();
@@ -98,14 +92,6 @@ public class BluetoothManager implements IBluetoothStreamReader{
         return mCurrentPairedDevice;
     }
 
-    public IBluetoothStreamReader getmBtSteamReader() {
-        return mBtSteamReader;
-    }
-
-    public void setmBtSteamReader(IBluetoothStreamReader mBtSteamListener) {
-        this.mBtSteamReader = mBtSteamListener;
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // LIFECYCLE
 
@@ -114,16 +100,25 @@ public class BluetoothManager implements IBluetoothStreamReader{
     public void bluetoothDidReadStream(String output){
         Log.d("############", "Received : " + output);
 
-        if(mBtSteamReader != null)
-            mBtSteamReader.bluetoothDidReadStream(output);
+        if(btBroadCastStreamReceiver != null)
+            btBroadCastStreamReceiver.onStreamReceive(output);
     }
 
-    public void registerToBluetoothEvent(Activity managerable){
-        this.setManagearable(managerable);
+    public void registerToBluetoothEvent(BroadcastReceiver receiver){
+        btBroadCastClient = receiver;
     }
 
-    public void unregisterToBluetoothEvent(Activity managerable){
-        this.unregisterClient();
+    public void unregisterToBluetoothEvent(){
+        btBroadCastClient = null;
+        this.unregisterBluetoothCall();
+    }
+
+    public void  registerToStreamBtEvent(BluetoothStreamReceiver receiver){
+        btBroadCastStreamReceiver = receiver;
+    }
+
+    public void  unregisterToStreamBtEvent(){
+        btBroadCastStreamReceiver = null;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -134,12 +129,9 @@ public class BluetoothManager implements IBluetoothStreamReader{
     }
 
     private void startBTDiscovery(){
-        try {
-            mApplicationContext.unregisterReceiver(mReceiver);
-        }catch (IllegalArgumentException e){}
+       this.unregisterBluetoothCall();
 
         final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBtManagerable.willStartFindingModule();
 
         mReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
@@ -149,16 +141,22 @@ public class BluetoothManager implements IBluetoothStreamReader{
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
                     listDevice.add(device);
-                    mBtManagerable.didFoundBluetoothObject(device);
+                    intent.setAction(BTACTION.ACTION_FOUND.toString());
+                    btBroadCastClient.onReceive(context, intent);
                 }
 
-                if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
+                else if(BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)){
+                    intent.setAction(BTACTION.ACTION_DISCOVERY_STARTED.toString());
+                    btBroadCastClient.onReceive(context, intent);
+                }
+
+                else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
                     mBluetoothAdapter.cancelDiscovery();
-                    mBtManagerable.didEndFindingBluetoothObject();
+                    intent.setAction(BTACTION.ACTION_DISCOVERY_FINISHED.toString());
+                    btBroadCastClient.onReceive(context, intent);
                 }
 
-
-                if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
                     final int state        = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
                     final int prevState    = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR);
 
@@ -166,8 +164,8 @@ public class BluetoothManager implements IBluetoothStreamReader{
 
                     if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
                         Log.d("############", "PAIRED ");
-                        BluetoothDevice btDevice        = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                        BluetoothAdapter btAdaptater     = BluetoothAdapter.getDefaultAdapter();
+                        BluetoothDevice btDevice      = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        BluetoothAdapter btAdaptater  = BluetoothAdapter.getDefaultAdapter();
 
                         BluetoothManager.this.scanBt(btAdaptater);
                         BluetoothManager.this.setUpBtManagerAndlistenSPPBluetooth(btDevice, btAdaptater);
@@ -202,25 +200,17 @@ public class BluetoothManager implements IBluetoothStreamReader{
         try {
             device.getClass().getMethod("setPairingConfirmation", boolean.class).invoke(device, true);
             device.getClass().getMethod("cancelPairingUserInput", boolean.class).invoke(device);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             e.printStackTrace();
         }
+
         this.scanBt(BluetoothAdapter.getDefaultAdapter());
     }
 
-    private void unregisterClient(){
+    private void unregisterBluetoothCall(){
         try{
             mApplicationContext.unregisterReceiver(mReceiver);
         }
         catch (IllegalArgumentException e) { }
-    }
-
-    private void setManagearable(Activity managerable){
-        //TODO cancel last managerable
-        mBtManagerable  = (IBluetoothManagerable)managerable;
     }
 }
