@@ -157,7 +157,7 @@ public class BluetoothManager implements IBluetoothStreamReader{
                     intent.setAction(BTACTION.ACTION_FOUND.toString());
                     btBroadCastClient.onReceive(context, intent);
                     // TODO mettre en public a utiliser avec le client.
-                    BluetoothManager.this.makePairingDevice(device);
+                    //BluetoothManager.this.makePairingDevice(device);
                 }
 
                 else if(BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)){
