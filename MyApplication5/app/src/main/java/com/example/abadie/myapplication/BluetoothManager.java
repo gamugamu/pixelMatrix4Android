@@ -46,6 +46,8 @@ public class BluetoothManager implements IBluetoothStreamReader{
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // PUBLIC
+
+    ////////////// DISCOVERY
     public void findBTModule(){
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         listDevice.clear();
@@ -65,6 +67,7 @@ public class BluetoothManager implements IBluetoothStreamReader{
             return null;
     }
 
+    ////////////// PAIRING
     public void pairDevice(BluetoothDevice device) {
         try {
             Method method = device.getClass().getMethod("createBond", (Class[]) null);
@@ -86,10 +89,28 @@ public class BluetoothManager implements IBluetoothStreamReader{
         }
     }
 
+    ////////////// READ / WRITE
+    public void write(byte[] buffer){
+        if(btSocketManager != null)
+          btSocketManager.write(buffer);
+    }
+
+    public void  registerToStreamBtEvent(BluetoothStreamReceiver receiver){
+        btBroadCastStreamReceiver = receiver;
+    }
+
+    public void  unregisterToStreamBtEvent(){
+        btBroadCastStreamReceiver = null;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // GETTER / SETTER
     public BluetoothDevice getCurrentPairedDevice() {
         return mCurrentPairedDevice;
+    }
+
+    public ArrayList<BluetoothDevice> getListedBTDevice(){
+        return listDevice;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,14 +132,6 @@ public class BluetoothManager implements IBluetoothStreamReader{
     public void unregisterToBluetoothEvent(){
         btBroadCastClient = null;
         this.unregisterBluetoothCall();
-    }
-
-    public void  registerToStreamBtEvent(BluetoothStreamReceiver receiver){
-        btBroadCastStreamReceiver = receiver;
-    }
-
-    public void  unregisterToStreamBtEvent(){
-        btBroadCastStreamReceiver = null;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,6 +198,7 @@ public class BluetoothManager implements IBluetoothStreamReader{
         mBluetoothAdapter.startDiscovery();
     }
 
+    // LOGIC
     private void scanBt(BluetoothAdapter mBluetoothAdapter){
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         Log.d("############", "SCAN " + pairedDevices.size() );

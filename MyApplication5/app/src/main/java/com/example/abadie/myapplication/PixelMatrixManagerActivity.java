@@ -49,8 +49,6 @@ public class PixelMatrixManagerActivity extends ActionBarActivity{
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private void didReadStream(final String output){
-        Log.d("############", "XReceived : " + output);
-
         new Thread(){
             public void run(){
                 runOnUiThread(new Runnable(){
@@ -72,7 +70,13 @@ public class PixelMatrixManagerActivity extends ActionBarActivity{
                 boolean handled = true;
 
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    Log.d("############", "SCAN " + v.getText());
+                    // without '\n' the firmwar will never send
+                    // confirmation output.
+                    String message = v.getText().toString();
+                    message += '\n';
+                    Log.d("############", "SCAN " + message);
+                    mBtManager.write(message.getBytes());
+
                     handled = false;
                 }
                 return handled;
