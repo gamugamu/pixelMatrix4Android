@@ -156,6 +156,8 @@ public class BluetoothManager implements IBluetoothStreamReader{
                     listDevice.add(device);
                     intent.setAction(BTACTION.ACTION_FOUND.toString());
                     btBroadCastClient.onReceive(context, intent);
+                    // TODO mettre en public a utiliser avec le client.
+                    BluetoothManager.this.makePairingDevice(device);
                 }
 
                 else if(BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)){
@@ -186,6 +188,8 @@ public class BluetoothManager implements IBluetoothStreamReader{
                     } else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED){
                         Log.d("############", "UNPAIRED ");
                     }
+
+                    btBroadCastClient.onReceive(context, intent);
                 }
             }
         };
@@ -211,12 +215,10 @@ public class BluetoothManager implements IBluetoothStreamReader{
     }
 
     private void makePairingDevice(BluetoothDevice device){
-        try {
-            device.getClass().getMethod("setPairingConfirmation", boolean.class).invoke(device, true);
-            device.getClass().getMethod("cancelPairingUserInput", boolean.class).invoke(device);
-        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
+        device.createBond();
+
+        BluetoothAdapter btAdaptater  = BluetoothAdapter.getDefaultAdapter();
+        BluetoothManager.this.setUpBtManagerAndlistenSPPBluetooth(device, btAdaptater);
 
         this.scanBt(BluetoothAdapter.getDefaultAdapter());
     }

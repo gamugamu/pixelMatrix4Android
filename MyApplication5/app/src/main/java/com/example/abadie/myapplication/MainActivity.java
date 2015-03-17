@@ -7,26 +7,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.zip.Inflater;
 
 public class MainActivity extends ActionBarActivity{
     // Helper
     BluetoothManager mBtManager;
     // GUI
     private ListView mListBt;
-    private ArrayAdapter<String> mAdapter;
+    private StableArrayAdapter mAdapter;
     private ProgressDialog mProgessDialog;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,8 +77,7 @@ public class MainActivity extends ActionBarActivity{
     }
 
     private void didFoundBluetoothObject(BluetoothDevice device){
-        mAdapter.add(device.getAddress() + " - " + device.getName() + "\n");
-        mAdapter.notifyDataSetChanged();
+        mAdapter.add(device);
     }
 
     private void clearList(){
@@ -91,21 +89,8 @@ public class MainActivity extends ActionBarActivity{
     private void setupBTList(){
         mListBt  = (ListView) findViewById(R.id.listView);
 
-        String[] values = new String[] { "Android", "iPhone", "WindowsMobile",
-                "Blackberry", "WebOS", "Ubuntu", "Windows7", "Max OS X",
-                "Linux", "OS/2", "Ubuntu", "Windows7", "Max OS X", "Linux",
-                "OS/2", "Ubuntu", "Windows7", "Max OS X", "Linux", "OS/2",
-                "Android", "iPhone", "WindowsMobile" };
-
-        final ArrayList<String> list = new ArrayList<String>();
-        for (int i = 0; i < values.length; ++i)
-            list.add(values[i]);
-
-        final StableArrayAdapter adapter = new StableArrayAdapter(this, list);
-
-       // mAdapter = new ArrayAdapter<String>(this, R.layout.listbt_layout);
-
-        mListBt.setAdapter(adapter);
+        mAdapter = new StableArrayAdapter(this);
+        mListBt.setAdapter(mAdapter);
 
         mListBt.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
@@ -139,14 +124,21 @@ public class MainActivity extends ActionBarActivity{
                     MainActivity.this.displayWait();
                 }
 
-                if (action.equals(BTACTION.ACTION_FOUND.toString())) {
+                else if (action.equals(BTACTION.ACTION_FOUND.toString())) {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     MainActivity.this.didFoundBluetoothObject(device);
                 }
 
-                if (action.equals(BTACTION.ACTION_DISCOVERY_FINISHED.toString()))
+                else if (action.equals(BTACTION.ACTION_DISCOVERY_FINISHED.toString())) {
                     MainActivity.this.undisplayWait();
-            }
+                }
+
+                else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    final int state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
+                    mAdapter.deviceStateChanged(device, state);
+                }
+        }
         });
     }
 
@@ -155,28 +147,41 @@ public class MainActivity extends ActionBarActivity{
     }
 
     private class StableArrayAdapter extends BaseAdapter{
+        public List<BluetoothDevice> mList;
+        private HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
+        private LayoutInflater mLayoutInflater;
 
-        HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
-        List<String> mList;
-        LayoutInflater mLayoutInflater;
 
-
-        public StableArrayAdapter(Context context,
-                                  List<String> objects) {
-            mList = objects;
+        public StableArrayAdapter(Context context){
+            mList = new ArrayList<BluetoothDevice>();
             mLayoutInflater = LayoutInflater.from(context);
-
-            for (int i = 0; i < objects.size(); ++i) {
-                mIdMap.put(objects.get(i), i);
-            }
         }
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            convertView = this.mLayoutInflater.inflate(R.layout.listbt_layout, null);
-            TextView view = (TextView)convertView.findViewById(R.id.title);
-            view.setText("test " + mList.get(position));
+        public void add(BluetoothDevice item){
+            mList.add(item);
+            this.notifyDataSetChanged();
+        }
 
+        public void clear(){
+            mList.clear();
+            this.notifyDataSetChanged();
+        }
+
+        public void deviceStateChanged(BluetoothDevice item, int state){
+            this.notifyDataSetChanged();
+        }
+
+            @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            convertView         = this.mLayoutInflater.inflate(R.layout.listbt_layout, null);
+            ImageView icon      = (ImageView)convertView.findViewById(R.id.icon);
+            TextView title      = (TextView)convertView.findViewById(R.id.title);
+            TextView subTitle   = (TextView)convertView.findViewById(R.id.subTitle);
+
+            BluetoothDevice item = mList.get(position);
+            title.setText(item.getName());
+            subTitle.setText(item.getAddress());
+            icon.setAlpha(item.getBondState() == BluetoothDevice.BOND_NONE ? .2f : 1);
             return convertView;
         }
 
