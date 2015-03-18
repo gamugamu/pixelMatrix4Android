@@ -62,6 +62,7 @@ class BluetoothConnection extends Thread{
         mmSocket = tmp;
 
         //now make the socket connection in separate thread to avoid FC
+        if(mmSocket != null){
         mConnectionThread  = new Thread(new Runnable() {
 
             @Override
@@ -88,6 +89,7 @@ class BluetoothConnection extends Thread{
             }
         });
         mConnectionThread.start();
+        }
     }
 
     public void run() {
