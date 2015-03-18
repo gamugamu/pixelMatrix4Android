@@ -44,7 +44,8 @@ public class MainActivity extends ActionBarActivity{
     }
 
     private void undisplayWait(){
-        mProgessDialog.dismiss();
+        if(mProgessDialog != null)
+          mProgessDialog.dismiss();
     }
 
     // GUI Action button

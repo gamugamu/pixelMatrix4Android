@@ -43,7 +43,8 @@ class BluetoothConnection extends Thread{
         try {
             boolean temp = device.fetchUuidsWithSdp();
             UUID uuid = null;
-            if( temp && device != null && device.getUuids().length > 0){
+            if( temp && device != null){
+                if(device.getUuids() != null && device.getUuids().length > 0){
                 uuid = device.getUuids()[0].getUuid();
                 Log.d("############ UID", "UID" + uuid);
                 tmp         = device.createRfcommSocketToServiceRecord(uuid);
@@ -51,6 +52,7 @@ class BluetoothConnection extends Thread{
                 tmp         = (BluetoothSocket) m.invoke(device, 1);
                 // Always cancel discovery because it will slow down a connection
                 madapter.cancelDiscovery();
+                }
             }
 
         } catch (IOException | InvocationTargetException |
