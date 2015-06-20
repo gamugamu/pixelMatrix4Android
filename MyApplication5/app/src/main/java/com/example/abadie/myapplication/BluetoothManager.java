@@ -73,6 +73,7 @@ public class BluetoothManager implements IBluetoothStreamReader{
             Method method = device.getClass().getMethod("createBond", (Class[]) null);
             method.invoke(device, (Object[]) null);
             mCurrentPairedDevice = device;
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -174,7 +175,6 @@ public class BluetoothManager implements IBluetoothStreamReader{
                 else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
                     final int state        = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
                     final int prevState    = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR);
-
                     Log.d("############", "STATE " + state + " " + prevState);
 
                     if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
@@ -187,6 +187,8 @@ public class BluetoothManager implements IBluetoothStreamReader{
 
                     } else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED){
                         Log.d("############", "UNPAIRED ");
+                    } else{
+                        Log.d("############", "UNKNOW ");
                     }
 
                     btBroadCastClient.onReceive(context, intent);

@@ -2,6 +2,8 @@ package com.example.abadie.myapplication;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,7 +50,29 @@ public class SimpleImageAdapter extends BaseAdapter {
         BluetoothDevice item = mList.get(position);
         title.setText(item.getName());
         subTitle.setText(item.getAddress());
-        icon.setAlpha(item.getBondState() == BluetoothDevice.BOND_NONE ? .2f : 1);
+
+        int btDeviceMode = item.getBondState();
+        String colorFilter = "#ffffff";
+
+        switch (btDeviceMode){
+            case BluetoothDevice.BOND_NONE : {
+                colorFilter = "#ff0000";
+                break;
+            }
+            case BluetoothDevice.BOND_BONDING : {
+                colorFilter = "#0000ff";
+                break;
+            }
+            case BluetoothDevice.BOND_BONDED : {
+                colorFilter = "#ffffff";
+                break;
+            }
+            default : {
+                colorFilter = "#ffff00";
+            }
+        }
+        icon.setColorFilter(Color.parseColor(colorFilter), PorterDuff.Mode.MULTIPLY);
+        //icon.setAlpha(item.getBondState() == BluetoothDevice.BOND_BONDED ? 1 : .2f);
         return convertView;
     }
 

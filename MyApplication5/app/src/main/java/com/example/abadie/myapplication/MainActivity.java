@@ -7,9 +7,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+
+import com.github.johnpersano.supertoasts.SuperToast;
+
 import java.util.ArrayList;
 
 
@@ -40,12 +44,13 @@ public class MainActivity extends ActionBarActivity{
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // GUI
     private void displayWait(){
-        mProgessDialog = ProgressDialog.show(this, "", "Please Wait", false);
+        SuperToast.create(this, "\"Détection de modules Bluetooth", SuperToast.Duration.EXTRA_LONG).show();
     }
 
-    private void undisplayWait(){
-        if(mProgessDialog != null)
-          mProgessDialog.dismiss();
+    private void undisplayWait(String message){
+       //fh
+       // this
+       // SuperToast.create(this, message, SuperToast.Duration.VERY_SHORT).show();
     }
 
     // GUI Action button
@@ -96,11 +101,22 @@ public class MainActivity extends ActionBarActivity{
 
                 if (btDevice != null) {
                     BluetoothManager btManager = MainActivity.this.mBtManager;
-                    if (btDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
-                        btManager.unpairDevice(btDevice);
+                    int bondState = btDevice.getBondState();
+
+                    if (bondState == BluetoothDevice.BOND_BONDED ||
+                        bondState == BluetoothDevice.BOND_BONDING)
+                        {
+                            Log.d("############ X state", "" + btDevice.getBondState() + " " + BluetoothDevice.BOND_BONDED);
+
+                            btManager.unpairDevice(btDevice);
                     } else {
+                       // MainActivity.this.unsetBTManager();
+                        Log.d("############ __state", "" + btDevice.getBondState() + " " + BluetoothDevice.BOND_BONDED);
+                        btManager.unpairDevice(btDevice);
                         btManager.pairDevice(btDevice);
                     }
+                }else {
+                    Log.d("############ state failed", "");
                 }
             }
         });
@@ -124,7 +140,7 @@ public class MainActivity extends ActionBarActivity{
                 }
 
                 else if (action.equals(BTACTION.ACTION_DISCOVERY_FINISHED.toString())) {
-                    MainActivity.this.undisplayWait();
+                    MainActivity.this.undisplayWait("Détection de modules bluetooth terminée");
                 }
 
                 else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {

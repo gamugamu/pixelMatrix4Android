@@ -53,10 +53,14 @@ class BluetoothConnection extends Thread{
                 // Always cancel discovery because it will slow down a connection
                 madapter.cancelDiscovery();
                 }
+            }else{
+                Log.d("############ ", "badInput");
             }
 
         } catch (IOException | InvocationTargetException |
                 NoSuchMethodException | IllegalAccessException e){
+            Log.d("############ ", "excetion" + e);
+
             e.printStackTrace();
         }
         mmSocket = tmp;
@@ -109,7 +113,6 @@ class BluetoothConnection extends Thread{
 
                      if(mBtSteamReader != null) {
                          mBtSteamReader.bluetoothDidReadStream(readMessage.toString());
-
                      }
                      if (readed.contains("\n")) {
                          readMessage.setLength(0);

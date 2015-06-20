@@ -13,6 +13,9 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import com.github.johnpersano.supertoasts.SuperToast;
+
 import java.io.IOException;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
@@ -43,11 +46,20 @@ public class PixelMatrixManagerActivity extends ActionBarActivity{
             public void onStreamReceive(String outputStream) {
                 PixelMatrixManagerActivity.this.didReadStream(outputStream);
             }
+
+            public void bluetoothDidFailedConnect(String output){
+                PixelMatrixManagerActivity.this.bluetoothDidFailedConnect(output);
+            }
+
+            public void bluetoothDidSucceedConnect(String output){
+                PixelMatrixManagerActivity.this.bluetoothDidSucceedConnect(output);
+            }
         });
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // BluetoothStreamReceiver
     private void didReadStream(final String output){
         new Thread(){
             public void run(){
@@ -62,7 +74,17 @@ public class PixelMatrixManagerActivity extends ActionBarActivity{
         }.start();
     }
 
-        private void setUpInputText(){
+    private void bluetoothDidFailedConnect(String outputStream){
+        SuperToast.create(this, "\"Connection réussion", SuperToast.Duration.EXTRA_LONG).show();
+    }
+
+    private void bluetoothDidSucceedConnect(String outputStream){
+        SuperToast.create(this, "\"Échec de la connection", SuperToast.Duration.EXTRA_LONG).show();
+    }
+
+    // Setup
+
+    private void setUpInputText(){
         EditText editText = (EditText) findViewById(R.id.bt_input);
         editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
