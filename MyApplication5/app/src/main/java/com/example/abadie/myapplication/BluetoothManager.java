@@ -8,6 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
+
+import com.github.johnpersano.supertoasts.SuperToast;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -119,6 +122,14 @@ public class BluetoothManager implements IBluetoothStreamReader{
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // IBLUETOOTHSTREAMREADER
+    public void bluetoothDidFailedInitialisation(String error){
+        // TODO ici
+        Log.d("############ ", "bluetoothDidFailedInitialisation");
+
+        if(btBroadCastStreamReceiver != null)
+            btBroadCastStreamReceiver.bluetoothDidFailedConnect(error);
+    }
+
     public void bluetoothDidReadStream(String output){
         Log.d("############", "Received : " + output);
 
@@ -126,6 +137,7 @@ public class BluetoothManager implements IBluetoothStreamReader{
             btBroadCastStreamReceiver.onStreamReceive(output);
     }
 
+    // REGISTER
     public void registerToBluetoothEvent(BroadcastReceiver receiver){
         btBroadCastClient = receiver;
     }
@@ -138,8 +150,7 @@ public class BluetoothManager implements IBluetoothStreamReader{
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // SETUP
     private void setUpBtManagerAndlistenSPPBluetooth(BluetoothDevice device, BluetoothAdapter adapter){
-        btSocketManager = new BluetoothConnection(device, adapter);
-        btSocketManager.setmBtSteamReader(this);
+        btSocketManager = new BluetoothConnection(device, adapter, this);
     }
 
     private void startBTDiscovery(){
@@ -157,8 +168,6 @@ public class BluetoothManager implements IBluetoothStreamReader{
                     listDevice.add(device);
                     intent.setAction(BTACTION.ACTION_FOUND.toString());
                     btBroadCastClient.onReceive(context, intent);
-                    // TODO mettre en public a utiliser avec le client.
-                    //BluetoothManager.this.makePairingDevice(device);
                 }
 
                 else if(BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)){

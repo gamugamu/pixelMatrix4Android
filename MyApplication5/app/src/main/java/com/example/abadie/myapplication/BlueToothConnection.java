@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.util.UUID;
 
 interface IBluetoothStreamReader{
+    public void bluetoothDidFailedInitialisation(String output);
     public void bluetoothDidReadStream(String output);
 }
 
@@ -34,24 +35,36 @@ class BluetoothConnection extends Thread{
     private static final UUID MY_UUID = UUID
             .fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
 
-    public BluetoothConnection(BluetoothDevice device, BluetoothAdapter adapter) {
+    public BluetoothConnection(BluetoothDevice device, BluetoothAdapter adapter, IBluetoothStreamReader btStreamListener) {
 
         BluetoothSocket tmp = null;
         madapter = adapter;
+        this.setmBtSteamReader(btStreamListener);
+
+        Log.d("############ initailse connection --", "");
 
         // Get a BluetoothSocket for a connection with the given BluetoothDevice
         try {
             boolean temp = device.fetchUuidsWithSdp();
             UUID uuid = null;
+            Log.d("############ initailse connection --", "1");
+
             if( temp && device != null){
                 if(device.getUuids() != null && device.getUuids().length > 0){
-                uuid = device.getUuids()[0].getUuid();
-                Log.d("############ UID", "UID" + uuid);
-                tmp         = device.createRfcommSocketToServiceRecord(uuid);
-                Method m    = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] {int.class});
-                tmp         = (BluetoothSocket) m.invoke(device, 1);
-                // Always cancel discovery because it will slow down a connection
-                madapter.cancelDiscovery();
+                  uuid = device.getUuids()[0].getUuid();
+                    Log.d("############ UID", "UID" + uuid);
+                   Log.d("############ device", device.toString());
+                    Log.d("############ D state", "" + device.getBondState());
+
+                    tmp         = device.createRfcommSocketToServiceRecord(uuid);
+                    Method m    = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] {int.class});
+                    tmp         = (BluetoothSocket) m.invoke(device, 1);
+                    // Always cancel discovery because it will slow down a connection
+                    madapter.cancelDiscovery();
+                }else{
+                    // TODO: parfois se connecte mais voyant rouge
+                    Log.d("############ ", "badInput_X" + device.getUuids());
+                    btStreamListener.bluetoothDidFailedInitialisation("No UUIDS");
                 }
             }else{
                 Log.d("############ ", "badInput");
@@ -59,10 +72,13 @@ class BluetoothConnection extends Thread{
 
         } catch (IOException | InvocationTargetException |
                 NoSuchMethodException | IllegalAccessException e){
-            Log.d("############ ", "excetion" + e);
+            Log.d("############ ", "excetion");
 
             e.printStackTrace();
         }
+
+        Log.d("############ initailse connection --", "2");
+
         mmSocket = tmp;
 
         //now make the socket connection in separate thread to avoid FC
@@ -87,6 +103,7 @@ class BluetoothConnection extends Thread{
                     try {
                         mmSocket.close();
                     } catch (IOException e2) {
+                        Log.d("############", "exception");
                         e2.printStackTrace();
                     }
                 }

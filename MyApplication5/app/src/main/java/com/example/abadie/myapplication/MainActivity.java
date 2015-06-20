@@ -124,6 +124,20 @@ public class MainActivity extends ActionBarActivity{
 
     private void setupBTManager(){
         mBtManager = BluetoothManager.getInstance(this.getApplicationContext());
+        mBtManager.registerToStreamBtEvent(new BluetoothStreamReceiver() {
+            @Override
+            public void onStreamReceive(String outputStream) {
+            }
+
+            public void bluetoothDidFailedConnect(String output){
+                SuperToast.create(MainActivity.this, "\"bluetoothDidFailedConnect", SuperToast.Duration.EXTRA_LONG).show();
+            }
+
+            public void bluetoothDidSucceedConnect(String output){
+                SuperToast.create(MainActivity.this, "\"bluetoothDidSucceedConnect", SuperToast.Duration.EXTRA_LONG).show();
+            }
+        });
+
         mBtManager.registerToBluetoothEvent(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
