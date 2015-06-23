@@ -16,27 +16,15 @@ import java.util.HashMap;
 import java.util.List;
 
 public class SimpleImageAdapter extends BaseAdapter {
-    public List<BluetoothDevice> mList;
-    private HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
+    public BluetoothManager BTManager;
     private LayoutInflater mLayoutInflater;
 
 
     public SimpleImageAdapter(Context context){
-        mList = new ArrayList<BluetoothDevice>();
         mLayoutInflater = LayoutInflater.from(context);
     }
 
-    public void add(BluetoothDevice item){
-        mList.add(item);
-        this.notifyDataSetChanged();
-    }
-
-    public void clear(){
-        mList.clear();
-        this.notifyDataSetChanged();
-    }
-
-    public void deviceStateChanged(BluetoothDevice item, int state){
+    public void redisplayList(){
         this.notifyDataSetChanged();
     }
 
@@ -47,7 +35,7 @@ public class SimpleImageAdapter extends BaseAdapter {
         TextView title      = (TextView)convertView.findViewById(R.id.title);
         TextView subTitle   = (TextView)convertView.findViewById(R.id.subTitle);
 
-        BluetoothDevice item = mList.get(position);
+        BluetoothDevice item = BTManager.getListDevice().get(position);
         title.setText(item.getName());
         subTitle.setText(item.getAddress());
 
@@ -72,18 +60,18 @@ public class SimpleImageAdapter extends BaseAdapter {
             }
         }
         icon.setColorFilter(Color.parseColor(colorFilter), PorterDuff.Mode.MULTIPLY);
-        //icon.setAlpha(item.getBondState() == BluetoothDevice.BOND_BONDED ? 1 : .2f);
+
         return convertView;
     }
 
     @Override
     public int getCount() {
-        return mList.size();
+        return BTManager.getListDevice().size();
     }
 
     @Override
     public Object getItem(int position) {
-        return mList.get(position);
+        return BTManager.getListDevice().get(position);
     }
 
     @Override

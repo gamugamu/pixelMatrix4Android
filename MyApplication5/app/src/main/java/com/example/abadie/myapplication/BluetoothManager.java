@@ -47,13 +47,16 @@ public class BluetoothManager implements IBluetoothStreamReader{
         return sInstance;
     }
 
+    public ArrayList<BluetoothDevice> getListDevice(){
+        return listDevice;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // PUBLIC
 
     ////////////// DISCOVERY
     public void findBTModule(){
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        listDevice.clear();
 
         if (!mBluetoothAdapter.isEnabled()){
             Intent intentBtEnabled = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -165,7 +168,7 @@ public class BluetoothManager implements IBluetoothStreamReader{
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-                    listDevice.add(device);
+                    BluetoothManager.this.addBTDeviceIfCan(device);
                     intent.setAction(BTACTION.ACTION_FOUND.toString());
                     btBroadCastClient.onReceive(context, intent);
                 }
@@ -214,6 +217,11 @@ public class BluetoothManager implements IBluetoothStreamReader{
     }
 
     // LOGIC
+    private void addBTDeviceIfCan(BluetoothDevice BTdevice) {
+        if(!listDevice.contains(BTdevice))
+             listDevice.add(BTdevice);
+    }
+
     private void scanBt(BluetoothAdapter mBluetoothAdapter){
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         Log.d("############", "SCAN " + pairedDevices.size() );
@@ -223,15 +231,6 @@ public class BluetoothManager implements IBluetoothStreamReader{
                 Log.d("############", "Items " + pairedDevices);
             }
         }
-    }
-
-    private void makePairingDevice(BluetoothDevice device){
-        device.createBond();
-
-        BluetoothAdapter btAdaptater  = BluetoothAdapter.getDefaultAdapter();
-        BluetoothManager.this.setUpBtManagerAndlistenSPPBluetooth(device, btAdaptater);
-
-        this.scanBt(BluetoothAdapter.getDefaultAdapter());
     }
 
     private void unregisterBluetoothCall(){

@@ -23,7 +23,6 @@ public class MainActivity extends ActionBarActivity{
     // GUI
     private ListView mListBt;
     private SimpleImageAdapter mAdapter;
-    private ProgressDialog mProgessDialog;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // LifeCycle
@@ -31,8 +30,9 @@ public class MainActivity extends ActionBarActivity{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_main);
-        this.setupBTList();
         this.setupBTManager();
+        this.setupBTList(mBtManager);
+        mAdapter.redisplayList();
     }
 
     @Override
@@ -55,17 +55,12 @@ public class MainActivity extends ActionBarActivity{
 
     // GUI Action button
     public void onButtonBluetoothScanTapped(View v){
+        mAdapter.redisplayList();
         mBtManager.findBTModule();
     }
 
     public void onTestTapped(View v){
         this.navigateToPixelMatrixManagerActivity();
-    }
-
-    private void displayBTDevice(ArrayList<BluetoothDevice> list){
-        for (BluetoothDevice device : list){
-            this.didFoundBluetoothObject(device);
-        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,22 +70,15 @@ public class MainActivity extends ActionBarActivity{
         MainActivity.this.startActivity(myIntent);
     }
 
-    private void didFoundBluetoothObject(BluetoothDevice device){
-        mAdapter.add(device);
-    }
-
-    private void clearList(){
-        mAdapter.clear();
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // SETUP
-    private void setupBTList(){
+    private void setupBTList(BluetoothManager btManager){
         mListBt  = (ListView) findViewById(R.id.listView);
 
         mAdapter = new SimpleImageAdapter(this);
-        mListBt.setAdapter(mAdapter);
+        mAdapter.BTManager = btManager;
 
+        mListBt.setAdapter(mAdapter);
         mListBt.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
@@ -104,14 +92,9 @@ public class MainActivity extends ActionBarActivity{
                     int bondState = btDevice.getBondState();
 
                     if (bondState == BluetoothDevice.BOND_BONDED ||
-                        bondState == BluetoothDevice.BOND_BONDING)
-                        {
-                            Log.d("############ X state", "" + btDevice.getBondState() + " " + BluetoothDevice.BOND_BONDED);
-
+                        bondState == BluetoothDevice.BOND_BONDING) {
                             btManager.unpairDevice(btDevice);
                     } else {
-                       // MainActivity.this.unsetBTManager();
-                        Log.d("############ __state", "" + btDevice.getBondState() + " " + BluetoothDevice.BOND_BONDED);
                         btManager.unpairDevice(btDevice);
                         btManager.pairDevice(btDevice);
                     }
@@ -144,13 +127,11 @@ public class MainActivity extends ActionBarActivity{
                 String action = intent.getAction();
 
                 if (action.equals(BTACTION.ACTION_DISCOVERY_STARTED.toString())) {
-                    MainActivity.this.clearList();
                     MainActivity.this.displayWait();
                 }
 
                 else if (action.equals(BTACTION.ACTION_FOUND.toString())) {
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    MainActivity.this.didFoundBluetoothObject(device);
+                    // BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 }
 
                 else if (action.equals(BTACTION.ACTION_DISCOVERY_FINISHED.toString())) {
@@ -158,11 +139,10 @@ public class MainActivity extends ActionBarActivity{
                 }
 
                 else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    final int state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
-                    mAdapter.deviceStateChanged(device, state);
                 }
-        }
+
+                mAdapter.redisplayList();
+            }
         });
     }
 
