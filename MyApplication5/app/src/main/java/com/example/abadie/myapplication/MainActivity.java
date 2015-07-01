@@ -56,7 +56,7 @@ public class MainActivity extends ActionBarActivity{
     // GUI Action button
     public void onButtonBluetoothScanTapped(View v){
         mAdapter.redisplayList();
-        mBtManager.findBTModule();
+        mBtManager.findBTModule(this);
     }
 
     public void onTestTapped(View v){
@@ -95,7 +95,6 @@ public class MainActivity extends ActionBarActivity{
                         bondState == BluetoothDevice.BOND_BONDING) {
                             btManager.unpairDevice(btDevice);
                     } else {
-                        btManager.unpairDevice(btDevice);
                         btManager.pairDevice(btDevice);
                     }
                 }else {

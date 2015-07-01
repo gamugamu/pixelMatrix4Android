@@ -55,12 +55,12 @@ public class BluetoothManager implements IBluetoothStreamReader{
     // PUBLIC
 
     ////////////// DISCOVERY
-    public void findBTModule(){
+    public void findBTModule(Activity activity){
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (!mBluetoothAdapter.isEnabled()){
             Intent intentBtEnabled = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            ((Activity)mApplicationContext).startActivityForResult(intentBtEnabled, REQUEST_ENABLE_BT);
+            activity.startActivityForResult(intentBtEnabled, REQUEST_ENABLE_BT);
         }else{
             this.startBTDiscovery();
         }
